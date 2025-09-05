@@ -296,7 +296,7 @@ class OpenIDConnectClient
      * @return bool
      * @throws OpenIDConnectClientException
      */
-    public function authenticate(): bool
+    public function authenticate(bool $exitOnRedirect = true): bool
     {
         // Do a preemptive check to see if the provider has thrown an error from a previous redirect
         if (isset($_REQUEST['error'])) {
@@ -416,7 +416,7 @@ class OpenIDConnectClient
             throw new OpenIDConnectClientException ('Unable to verify JWT claims');
         }
 
-        $this->requestAuthorization();
+        $this->requestAuthorization($exitOnRedirect);
         return false;
     }
 
@@ -742,7 +742,7 @@ class OpenIDConnectClient
      * @throws OpenIDConnectClientException
      * @throws Exception
      */
-    private function requestAuthorization() {
+    private function requestAuthorization(bool $exitOnRedirect = true) {
 
         $auth_endpoint = $this->getProviderConfigValue('authorization_endpoint');
         $response_type = 'code';
@@ -792,7 +792,7 @@ class OpenIDConnectClient
         $auth_endpoint .= (strpos($auth_endpoint, '?') === false ? '?' : '&') . http_build_query($auth_params, '', '&', $this->encType);
 
         $this->commitSession();
-        $this->redirect($auth_endpoint);
+        $this->redirect($auth_endpoint, $exitOnRedirect);
     }
 
     /**
@@ -1484,9 +1484,11 @@ class OpenIDConnectClient
         return $this->providerConfig['providerUrl'];
     }
 
-    public function redirect(string $url) {
+    public function redirect(string $url, bool $exit = true) {
         header('Location: ' . $url);
-        exit;
+        if ($exit) {
+            exit;
+        }
     }
 
     public function setHttpProxy(string $httpProxy) {
